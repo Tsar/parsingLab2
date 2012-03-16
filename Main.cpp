@@ -1,3 +1,4 @@
+#include <iostream>
 #include <fstream>
 #include <GL/glut.h>
 
@@ -80,7 +81,11 @@ void keyboardFunc(unsigned char key, int x, int y) {
             }
             if (treeToDraw)
                 delete treeToDraw;
-            treeToDraw = p.parse(s);
+            try {
+                treeToDraw = p.parse(s);
+            } catch (ParseException& pe) {
+                std::cout << pe.getMessage() << " " << pe.getErrorOffset() << std::endl;
+            }
             break;
     }
     glutPostRedisplay();
