@@ -14,7 +14,10 @@ Tree* Parser::parse(std::string const& input) {
         delete lex_;
     lex_ = new LexicalAnalyzer(input);
     lex_->nextToken();
-    return E();
+    Tree* res = E();
+    if (lex_->curToken() != END)
+        throw new ParseException("Unexpected token at position", lex_->curPos());
+    return res;
 }
 
 Tree* Parser::E() {
@@ -38,8 +41,7 @@ Tree* Parser::EPrime() {
     switch (lex_->curToken()) {
         case NUMBER:
             //E
-            res->addChild(E());  //INCORRECT, E() and E'() - both incorrect
-            lex_->nextToken();
+            res->addChild(E());
             //o
             if (lex_->curToken() != OPERATOR)
                 throw new ParseException("Operator expected at position", lex_->curPos());
@@ -48,10 +50,10 @@ Tree* Parser::EPrime() {
             //E'
             res->addChild(EPrime());
             break;
-        case END:
-            //eps
-            break;
         case OPERATOR:
+        case END:
+            res->addChild(new Tree("eps"));
+            break;
         default:
             throw new ParseException("Unexpected token at position", lex_->curPos());
     }
