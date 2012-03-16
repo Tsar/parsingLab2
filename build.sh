@@ -1,2 +1,2 @@
 #!/bin/sh
-g++ LexicalAnalyzer.cpp Parser.cpp Main.cpp -o parseTreeBuilder
+g++ -lGL -lglut LexicalAnalyzer.cpp Parser.cpp Main.cpp -o parseTreeBuilder

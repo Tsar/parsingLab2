@@ -13,11 +13,11 @@ Tree* treeToDraw = 0;
 
 void haltProgram() {
     inputFile.close();
-    glutDestroyWin(window);
+    glutDestroyWindow(window);
     exit(0);
 }
 
-void drawTextXY(double x, double y, int font, std::string const& text) {
+void drawTextXY(double x, double y, void* font, std::string const& text) {
     glRasterPos2d(x, y);
     for (size_t i = 0; i < text.length(); ++i) {
         glutBitmapCharacter(font, text[i]);
@@ -25,12 +25,13 @@ void drawTextXY(double x, double y, int font, std::string const& text) {
 }
 
 void drawTree(Tree* t, double rX1, double rY1, double rX2, double rY2) {
-    int h = t.getHeight();
+    int h = t->getHeight();
     double cellH = (rY2 - rY1) / h;
     
     //drawing children
-    double subCellW = (rX2 - rX1) / t.getChildren().size();
-    for (size_t i = 0; i < t.getChildren().size(); ++i) {
+    int childrenNum = t->getChildren().size();
+    double subCellW = (rX2 - rX1) / childrenNum;
+    for (size_t i = 0; i < childrenNum; ++i) {
         //drawing edges to children
         glColor3d(1, 0, 0);
         glBegin(GL_LINES);
@@ -38,7 +39,7 @@ void drawTree(Tree* t, double rX1, double rY1, double rX2, double rY2) {
         glVertex2d(rX1 + subCellW * (i + 0.5), rY1 + cellH * 1.5);
         glEnd();
         
-        drawTree(t.getChildren()[i], rX1 + subCellW * i, rY1 + cellH, rX1 + subCellW * (i + 1), rY2);
+        drawTree(t->getChildren()[i], rX1 + subCellW * i, rY1 + cellH, rX1 + subCellW * (i + 1), rY2);
     }
 
     //drawing self
@@ -51,7 +52,7 @@ void drawTree(Tree* t, double rX1, double rY1, double rX2, double rY2) {
     glEnd();
     
     glColor3d(1, 1, 1);
-    drawTextXY((rX1 + rX2) / 2 - 0.05, rY1 + cellH / 2, GLUT_BITMAP_HELVETICA_12, t.getNode());
+    drawTextXY((rX1 + rX2) / 2 - 0.05, rY1 + cellH / 2, GLUT_BITMAP_HELVETICA_12, t->getNode());
 }
 
 void displayFunc() {
