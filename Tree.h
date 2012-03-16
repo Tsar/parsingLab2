@@ -18,8 +18,8 @@ public:
     
     void addChild(Tree* child) {
         children_.push_back(child);
-        if (height_ < child.height_ + 1)
-            height_ = child.height_ + 1;
+        if (height_ < child->height_ + 1)
+            height_ = child->height_ + 1;
     }
     
     std::string getNode() const {

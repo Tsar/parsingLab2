@@ -63,5 +63,5 @@ void LexicalAnalyzer::skipDigits() {
 }
 
 void LexicalAnalyzer::nextChar() {
-    curChar_ = input[curPos_++];
+    curChar_ = input_[curPos_++];
 }
