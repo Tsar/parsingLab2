@@ -14,6 +14,7 @@ void LexicalAnalyzer::nextToken() {
     if (isDigit(curChar_)) {
         curToken_ = NUMBER;
         skipDigits();
+        return;
     }
     switch (curChar_) {
         case '+':

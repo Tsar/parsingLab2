@@ -38,7 +38,7 @@ Tree* Parser::EPrime() {
     switch (lex_->curToken()) {
         case NUMBER:
             //E
-            res->addChild(E());
+            res->addChild(E());  //INCORRECT, E() and E'() - both incorrect
             lex_->nextToken();
             //o
             if (lex_->curToken() != OPERATOR)

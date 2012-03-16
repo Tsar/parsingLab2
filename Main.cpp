@@ -30,7 +30,7 @@ void drawTree(Tree* t, double rX1, double rY1, double rX2, double rY2) {
     double cellH = (rY2 - rY1) / h;
     
     //drawing children
-    int childrenNum = t->getChildren().size();
+    size_t childrenNum = t->getChildren().size();
     double subCellW = (rX2 - rX1) / childrenNum;
     for (size_t i = 0; i < childrenNum; ++i) {
         //drawing edges to children
