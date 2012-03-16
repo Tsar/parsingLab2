@@ -7,7 +7,8 @@
 class Tree {
 public:
     Tree(std::string const& node)
-        : node_(node) {
+        : node_(node)
+        , height_(1) {
     }
     
     ~Tree() {
@@ -17,10 +18,25 @@ public:
     
     void addChild(Tree* child) {
         children_.push_back(child);
+        if (height_ < child.height_ + 1)
+            height_ = child.height_ + 1;
+    }
+    
+    std::string getNode() const {
+        return node_;
+    }
+    
+    std::vector<Tree*> const& getChildren() const {
+        return children_;
+    }
+    
+    int getHeight() const {
+        return height_;
     }
 private:
     std::string node_;
     std::vector<Tree*> children_;
+    int height_;
 };
 
 #endif //_TREE_H_
