@@ -1,5 +1,6 @@
 #include <iostream>
 #include <fstream>
+#include <sstream>
 #include <GL/glut.h>
 
 #include "Parser.h"
@@ -19,6 +20,8 @@ int window;
 Tree* treeToDraw = 0;
 bool fullscreenMode = false;
 bool testingFinished = false;
+bool currentlyParseException = false;
+ParseException parseException("", 0);
 std::string currentTest;
 
 void haltProgram() {
@@ -80,6 +83,15 @@ void displayFunc() {
         if (treeToDraw) {
             drawTree(treeToDraw, -1.0, 1.0, 1.0, -1.0, -2.0 / treeToDraw->getHeight());
         }
+        
+        if (currentlyParseException) {
+            glColor3d(1, 1, 0);
+            drawTextXY(-0.15, 0, GLUT_BITMAP_HELVETICA_12, "ParseException:");
+            glColor3d(1, 1, 1);
+            std::ostringstream oss;
+            oss << parseException.getMessage() << " " << parseException.getErrorOffset();
+            drawTextXY(-0.15, -0.05, GLUT_BITMAP_HELVETICA_12, oss.str());
+        }
 
         glColor3d(1, 1, 0);
         drawTextXY(-0.90, 0.70, GLUT_BITMAP_HELVETICA_12, "Current test: " + currentTest);
@@ -117,12 +129,11 @@ void buildNextTree() {
         delete treeToDraw;
     try {
         treeToDraw = p.parse(currentTest);
-    } catch (ParseException& pe) {
+        currentlyParseException = false;
+    } catch (ParseException const& pe) {
         treeToDraw = 0;
-        std::cout << pe.getMessage() << " " << pe.getErrorOffset() << std::endl;
-    } catch (...) {
-        treeToDraw = 0;
-        std::cout << "exception" << std::endl;
+        currentlyParseException = true;
+        parseException = pe;
     }
 }
 

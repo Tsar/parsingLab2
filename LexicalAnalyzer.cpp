@@ -38,7 +38,7 @@ void LexicalAnalyzer::nextToken() {
             curToken_ = END;
             break;
         default:
-            throw new ParseException("Illegal character " + curChar_, curPos_);
+            throw ParseException("Illegal character " + curChar_, curPos_);
     }
 }
 
