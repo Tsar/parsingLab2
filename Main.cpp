@@ -14,7 +14,9 @@
 #define TEHW 0.04
 #define TEHH 0.04
 
-std::ifstream inputFile("tests.txt");
+#define INPUT_FILE_NAME "tests.txt"
+
+std::ifstream inputFile(INPUT_FILE_NAME);
 Parser p;
 int window;
 Tree* treeToDraw = 0;
@@ -102,6 +104,7 @@ void displayFunc() {
         drawTextXY(-0.90, 0.80, GLUT_BITMAP_HELVETICA_12, "Other key - parse next test");
     } else {
         glColor3d(1, 1, 1);
+        drawTextXY(-0.90, 0.90, GLUT_BITMAP_HELVETICA_12, "R - restart");
         drawTextXY(-0.90, 0.85, GLUT_BITMAP_HELVETICA_12, "F - toggle fullscreen");
         drawTextXY(-0.90, 0.80, GLUT_BITMAP_HELVETICA_12, "Other key - quit");
 
@@ -138,26 +141,33 @@ void buildNextTree() {
 }
 
 void keyboardFunc(unsigned char key, int x, int y) {
-    switch (key) {
-        case 27:
-        case 'q':
-        case 'Q':
-            haltProgram();
-        case 'f':
-        case 'F':
-            fullscreenMode = !fullscreenMode;
-            if (fullscreenMode) {
-                glutFullScreen();
-            } else {
-                glutReshapeWindow(DEFAULT_WINDOW_SIZE_X, DEFAULT_WINDOW_SIZE_Y);
-                glutPositionWindow(DEFAULT_WINDOW_POS_X, DEFAULT_WINDOW_POS_Y);
-            }
-            break;
-        default:
-            if (testingFinished)
+    if (testingFinished && (key == 'r' || key == 'R')) {
+        inputFile.close();
+        inputFile.open(INPUT_FILE_NAME);
+        testingFinished = false;
+        buildNextTree();
+    } else {
+        switch (key) {
+            case 27:
+            case 'q':
+            case 'Q':
                 haltProgram();
-            buildNextTree();
-            break;
+            case 'f':
+            case 'F':
+                fullscreenMode = !fullscreenMode;
+                if (fullscreenMode) {
+                    glutFullScreen();
+                } else {
+                    glutReshapeWindow(DEFAULT_WINDOW_SIZE_X, DEFAULT_WINDOW_SIZE_Y);
+                    glutPositionWindow(DEFAULT_WINDOW_POS_X, DEFAULT_WINDOW_POS_Y);
+                }
+                break;
+            default:
+                if (testingFinished)
+                    haltProgram();
+                buildNextTree();
+                break;
+        }
     }
     glutPostRedisplay();
 }
