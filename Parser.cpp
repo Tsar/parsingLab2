@@ -16,7 +16,7 @@ Tree* Parser::parse(std::string const& input) {
     lex_->nextToken();
     Tree* res = E();
     if (lex_->curToken() != END)
-        throw ParseException("Unexpected token at position", lex_->curPos());
+        throw ParseException("Unexpected token at position", lex_->curPos() - 1);
     return res;
 }
 
@@ -31,7 +31,7 @@ Tree* Parser::E() {
             res->addChild(EPrime());
             break;
         default:
-            throw ParseException("Unexpected token at position", lex_->curPos());
+            throw ParseException("Unexpected token at position", lex_->curPos() - 1);
     }
     return res;
 }
@@ -44,7 +44,7 @@ Tree* Parser::EPrime() {
             res->addChild(E());
             //o
             if (lex_->curToken() != OPERATOR)
-                throw ParseException("Operator expected at position", lex_->curPos());
+                throw ParseException("Operator expected at position", lex_->curPos() - 1);
             res->addChild(new Tree("o"));
             lex_->nextToken();
             //E'
@@ -55,7 +55,7 @@ Tree* Parser::EPrime() {
             res->addChild(new Tree("eps"));
             break;
         default:
-            throw ParseException("Unexpected token at position", lex_->curPos());
+            throw ParseException("Unexpected token at position", lex_->curPos() - 1);
     }
     return res;
 }

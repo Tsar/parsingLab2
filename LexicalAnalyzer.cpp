@@ -38,7 +38,7 @@ void LexicalAnalyzer::nextToken() {
             curToken_ = END;
             break;
         default:
-            throw ParseException("Illegal character " + curChar_, curPos_);
+            throw ParseException(std::string("Illegal character '") + curChar_ + std::string("' at position"), curPos_);
     }
 }
 
