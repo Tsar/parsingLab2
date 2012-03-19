@@ -10,10 +10,6 @@
 #define DEFAULT_WINDOW_POS_X  100
 #define DEFAULT_WINDOW_POS_Y   50
 
-//tree element half width/height
-#define TEHW 0.04
-#define TEHH 0.04
-
 #define INPUT_FILE_NAME "tests.txt"
 
 std::ifstream inputFile(INPUT_FILE_NAME);
@@ -30,6 +26,14 @@ void haltProgram() {
     inputFile.close();
     glutDestroyWindow(window);
     exit(0);
+}
+
+double getTextLength(void* font, std::string const& text) {
+    int res = 0;
+    for (size_t i = 0; i < text.length(); ++i) {
+        res += glutBitmapWidth(font, text[i]);
+    }
+    return static_cast<double>(res);
 }
 
 void drawTextXY(double x, double y, void* font, std::string const& text) {
@@ -56,26 +60,32 @@ void drawTree(Tree* t, double rX1, double rY1, double rX2, double rY2, double ce
         drawTree(t->getChildren()[i], rX1 + subCellW * i, rY1 + cellH, rX1 + subCellW * (i + 1), rY2, cellH);
     }
 
+    double textLength = getTextLength(GLUT_BITMAP_HELVETICA_12, t->getNode());
+    double halfL = (textLength + 8.0) / glutGet(GLUT_WINDOW_WIDTH);
+    double halfH = 16.0 / glutGet(GLUT_WINDOW_HEIGHT);
+    double textXDelta = textLength / glutGet(GLUT_WINDOW_WIDTH);
+    double textYDelta = 10.0 / glutGet(GLUT_WINDOW_HEIGHT);
+
     //drawing self
     glColor3d(0, 0, 0);
     glBegin(GL_TRIANGLE_STRIP);
-    glVertex2d((rX1 + rX2) / 2 - TEHW, rY1 + cellH / 2 - TEHH);
-    glVertex2d((rX1 + rX2) / 2 + TEHW, rY1 + cellH / 2 - TEHH);
-    glVertex2d((rX1 + rX2) / 2 - TEHW, rY1 + cellH / 2 + TEHH);
-    glVertex2d((rX1 + rX2) / 2 + TEHW, rY1 + cellH / 2 + TEHH);
+    glVertex2d((rX1 + rX2) / 2 - halfL, rY1 + cellH / 2 - halfH);
+    glVertex2d((rX1 + rX2) / 2 + halfL, rY1 + cellH / 2 - halfH);
+    glVertex2d((rX1 + rX2) / 2 - halfL, rY1 + cellH / 2 + halfH);
+    glVertex2d((rX1 + rX2) / 2 + halfL, rY1 + cellH / 2 + halfH);
     glEnd();
 
     glColor3d(0, 1, 0);
     glBegin(GL_LINE_STRIP);
-    glVertex2d((rX1 + rX2) / 2 - TEHW, rY1 + cellH / 2 - TEHH);
-    glVertex2d((rX1 + rX2) / 2 + TEHW, rY1 + cellH / 2 - TEHH);
-    glVertex2d((rX1 + rX2) / 2 + TEHW, rY1 + cellH / 2 + TEHH);
-    glVertex2d((rX1 + rX2) / 2 - TEHW, rY1 + cellH / 2 + TEHH);
-    glVertex2d((rX1 + rX2) / 2 - TEHW, rY1 + cellH / 2 - TEHH);
+    glVertex2d((rX1 + rX2) / 2 - halfL, rY1 + cellH / 2 - halfH);
+    glVertex2d((rX1 + rX2) / 2 + halfL, rY1 + cellH / 2 - halfH);
+    glVertex2d((rX1 + rX2) / 2 + halfL, rY1 + cellH / 2 + halfH);
+    glVertex2d((rX1 + rX2) / 2 - halfL, rY1 + cellH / 2 + halfH);
+    glVertex2d((rX1 + rX2) / 2 - halfL, rY1 + cellH / 2 - halfH);
     glEnd();
     
     glColor3d(1, 1, 1);
-    drawTextXY((rX1 + rX2) / 2 - 0.02, rY1 + cellH / 2 - 0.01, GLUT_BITMAP_HELVETICA_12, t->getNode());
+    drawTextXY((rX1 + rX2) / 2 - textXDelta, rY1 + cellH / 2 - textYDelta, GLUT_BITMAP_HELVETICA_12, t->getNode());
 }
 
 void displayFunc() {
