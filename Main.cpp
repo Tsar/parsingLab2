@@ -127,6 +127,16 @@ void displayFunc() {
     
     if (treeToDraw) {
         drawTree(treeToDraw, treeRectX1, treeRectY1, treeRectX2, treeRectY2, (treeRectY2 - treeRectY1) / treeToDraw->getHeight());
+
+        double crossDX = 15.0 / glutGet(GLUT_WINDOW_WIDTH);
+        double crossDY = 15.0 / glutGet(GLUT_WINDOW_HEIGHT);
+        glColor4d(0, 0, 1, 0.5);
+        glBegin(GL_LINES);
+        glVertex2d(-crossDX, 0);
+        glVertex2d(crossDX, 0);
+        glVertex2d(0, -crossDY);
+        glVertex2d(0, crossDY);
+        glEnd();
     }
 
     if (currentlyParseException) {
@@ -156,7 +166,7 @@ void displayFunc() {
         drawTextXY(-0.90, 0.90 - textDelta * 10, GLUT_BITMAP_HELVETICA_12, "h/H - show/hide this help");
     }
     
-    glFlush();
+    glutSwapBuffers();
 }
 
 void readTests() {
@@ -322,7 +332,7 @@ void specialFunc(int key, int x, int y) {
 
 int main(int argc, char **argv) {
     glutInit(&argc, argv);
-    glutInitDisplayMode(GLUT_RGBA | GLUT_SINGLE);
+    glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE);
     glutInitWindowSize(DEFAULT_WINDOW_SIZE_X, DEFAULT_WINDOW_SIZE_Y);
     glutInitWindowPosition(DEFAULT_WINDOW_POS_X, DEFAULT_WINDOW_POS_Y);
     window = glutCreateWindow("Parse Tree Visualizer");
@@ -332,6 +342,11 @@ int main(int argc, char **argv) {
     glutSpecialFunc(specialFunc);
     
     glClearColor(0, 0, 0, 0);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    //glEnable(GL_LINE_SMOOTH);
+    //glHint(GL_LINE_SMOOTH_HINT, GL_DONT_CARE);
+    glLineWidth(1.0);
 
     readTests();
     currentTestNumber = 0;
