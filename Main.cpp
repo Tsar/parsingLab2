@@ -12,18 +12,28 @@
 
 #define INPUT_FILE_NAME "tests.txt"
 
-std::ifstream inputFile(INPUT_FILE_NAME);
+#define INITIAL_TREE_RECT_X1 -0.95
+#define INITIAL_TREE_RECT_Y1  0.85
+#define INITIAL_TREE_RECT_X2  0.95
+#define INITIAL_TREE_RECT_Y2 -0.95
+
 Parser p;
 int window;
 Tree* treeToDraw = 0;
 bool fullscreenMode = false;
-bool testingFinished = false;
 bool currentlyParseException = false;
+bool showHelp = true;
 ParseException parseException("", 0);
-std::string currentTest;
+std::vector<std::string> tests;
+size_t currentTestNumber = 0;
+double currentTestNotePosDeltaX = 0;
+
+double treeRectX1 = INITIAL_TREE_RECT_X1;
+double treeRectY1 = INITIAL_TREE_RECT_Y1;
+double treeRectX2 = INITIAL_TREE_RECT_X2;
+double treeRectY2 = INITIAL_TREE_RECT_Y2;
 
 void haltProgram() {
-    inputFile.close();
     glutDestroyWindow(window);
     exit(0);
 }
@@ -40,6 +50,15 @@ void drawTextXY(double x, double y, void* font, std::string const& text) {
     glRasterPos2d(x, y);
     for (size_t i = 0; i < text.length(); ++i) {
         glutBitmapCharacter(font, text[i]);
+    }
+}
+
+void drawTextXYEvenIfItDoesNotStartOnWindow(double x, double y, void* font, std::string const& text) {
+    for (size_t i = 0; i < text.length(); ++i) {
+        glRasterPos2d(x, y);
+        glutBitmapCharacter(font, text[i]);
+        double charW = static_cast<double>(glutBitmapWidth(font, text[i]));
+        x += charW * 2 / glutGet(GLUT_WINDOW_WIDTH);
     }
 }
 
@@ -60,11 +79,13 @@ void drawTree(Tree* t, double rX1, double rY1, double rX2, double rY2, double ce
         drawTree(t->getChildren()[i], rX1 + subCellW * i, rY1 + cellH, rX1 + subCellW * (i + 1), rY2, cellH);
     }
 
+    int windowW = glutGet(GLUT_WINDOW_WIDTH);
+    int windowH = glutGet(GLUT_WINDOW_HEIGHT);
     double textLength = getTextLength(GLUT_BITMAP_HELVETICA_12, t->getNode());
-    double halfL = (textLength + 8.0) / glutGet(GLUT_WINDOW_WIDTH);
-    double halfH = 16.0 / glutGet(GLUT_WINDOW_HEIGHT);
-    double textXDelta = textLength / glutGet(GLUT_WINDOW_WIDTH);
-    double textYDelta = 10.0 / glutGet(GLUT_WINDOW_HEIGHT);
+    double halfL = (textLength + 8.0) / windowW;
+    double halfH = 16.0 / windowH;
+    double textXDelta = textLength / windowW;
+    double textYDelta = 10.0 / windowH;
 
     //drawing self
     glColor3d(0, 0, 0);
@@ -90,58 +111,75 @@ void drawTree(Tree* t, double rX1, double rY1, double rX2, double rY2, double ce
 
 void displayFunc() {
     glClear(GL_COLOR_BUFFER_BIT);
+
+    double textDelta = 26.0 / glutGet(GLUT_WINDOW_HEIGHT);
+
+    if (tests.empty()) {
+        glColor3d(1, 1, 0);
+        std::ostringstream oss;
+        oss << "No tests found in '" << INPUT_FILE_NAME << "'";
+        drawTextXY(-0.15, 0, GLUT_BITMAP_HELVETICA_12, oss.str());
+        glColor3d(1, 1, 1);
+        drawTextXY(-0.15, -textDelta, GLUT_BITMAP_HELVETICA_12, "Press Esc or q to quit");
+        glFlush();
+        return;
+    }
     
-    if (!testingFinished) {
-        if (treeToDraw) {
-            drawTree(treeToDraw, -1.0, 1.0, 1.0, -1.0, -2.0 / treeToDraw->getHeight());
-        }
-        
-        if (currentlyParseException) {
-            glColor3d(1, 1, 0);
-            drawTextXY(-0.15, 0, GLUT_BITMAP_HELVETICA_12, "ParseException:");
-            glColor3d(1, 1, 1);
-            std::ostringstream oss;
-            oss << parseException.getMessage() << " " << parseException.getErrorOffset();
-            drawTextXY(-0.15, -0.05, GLUT_BITMAP_HELVETICA_12, oss.str());
-        }
+    if (treeToDraw) {
+        drawTree(treeToDraw, treeRectX1, treeRectY1, treeRectX2, treeRectY2, (treeRectY2 - treeRectY1) / treeToDraw->getHeight());
+    }
 
+    if (currentlyParseException) {
         glColor3d(1, 1, 0);
-        drawTextXY(-0.90, 0.70, GLUT_BITMAP_HELVETICA_12, "Current test: " + currentTest);
-
+        drawTextXY(-0.15, 0, GLUT_BITMAP_HELVETICA_12, "ParseException:");
         glColor3d(1, 1, 1);
-        drawTextXY(-0.90, 0.90, GLUT_BITMAP_HELVETICA_12, "Esc or Q - quit");
-        drawTextXY(-0.90, 0.85, GLUT_BITMAP_HELVETICA_12, "F - toggle fullscreen");
-        drawTextXY(-0.90, 0.80, GLUT_BITMAP_HELVETICA_12, "Other key - parse next test");
-    } else {
-        glColor3d(1, 1, 1);
-        drawTextXY(-0.90, 0.90, GLUT_BITMAP_HELVETICA_12, "R - restart");
-        drawTextXY(-0.90, 0.85, GLUT_BITMAP_HELVETICA_12, "F - toggle fullscreen");
-        drawTextXY(-0.90, 0.80, GLUT_BITMAP_HELVETICA_12, "Other key - quit");
+        std::ostringstream oss;
+        oss << parseException.getMessage() << " " << parseException.getErrorOffset();
+        drawTextXY(-0.15, -textDelta, GLUT_BITMAP_HELVETICA_12, oss.str());
+    }
 
-        glColor3d(1, 1, 0);
-        drawTextXY(-0.1, 0, GLUT_BITMAP_HELVETICA_12, "ALL TESTS PASSED");
+    glColor3d(1, 1, 0);
+    std::ostringstream oss;
+    oss << "Current test [" << currentTestNumber + 1 << "/" << tests.size() << "]: " << tests[currentTestNumber];
+    drawTextXYEvenIfItDoesNotStartOnWindow(-0.90 + currentTestNotePosDeltaX, 0.90, GLUT_BITMAP_HELVETICA_12, oss.str());
+
+    if (showHelp) {
+        glColor3d(1, 1, 1);
+        drawTextXY(-0.90, 0.90 - textDelta * 2,  GLUT_BITMAP_HELVETICA_12, "Esc or q - quit");
+        drawTextXY(-0.90, 0.90 - textDelta * 3,  GLUT_BITMAP_HELVETICA_12, "f - toggle fullscreen");
+        drawTextXY(-0.90, 0.90 - textDelta * 4,  GLUT_BITMAP_HELVETICA_12, "F2 or PageDown - next test");
+        drawTextXY(-0.90, 0.90 - textDelta * 5,  GLUT_BITMAP_HELVETICA_12, "F1 or PageUp - previous test");
+        drawTextXY(-0.90, 0.90 - textDelta * 6,  GLUT_BITMAP_HELVETICA_12, "x/X - zoom in/out tree by X axis");
+        drawTextXY(-0.90, 0.90 - textDelta * 7,  GLUT_BITMAP_HELVETICA_12, "y/Y - zoom in/out tree by Y axis");
+        drawTextXY(-0.90, 0.90 - textDelta * 8,  GLUT_BITMAP_HELVETICA_12, "+/- - zoom in/out tree by both axes");
+        drawTextXY(-0.90, 0.90 - textDelta * 9,  GLUT_BITMAP_HELVETICA_12, "Arrows - move tree");
+        drawTextXY(-0.90, 0.90 - textDelta * 10, GLUT_BITMAP_HELVETICA_12, "h/H - show/hide this help");
     }
     
     glFlush();
 }
 
-void buildNextTree() {
-    if (inputFile.eof()) {
-        testingFinished = true;
-        return;
-    }
-    currentTest = "";
-    while (currentTest.empty()) {
-        getline(inputFile, currentTest);
-        if (inputFile.eof()) {
-            testingFinished = true;
-            return;
+void readTests() {
+    std::ifstream inputFile(INPUT_FILE_NAME);
+    if (!inputFile.fail()) {
+        while (!inputFile.eof()) {
+            std::string s;
+            getline(inputFile, s);
+            if (s != "")
+                tests.push_back(s);
         }
     }
+    inputFile.close();
+}
+
+void rebuildTree() {
+    if (tests.empty())
+        return;
+
     if (treeToDraw)
         delete treeToDraw;
     try {
-        treeToDraw = p.parse(currentTest);
+        treeToDraw = p.parse(tests[currentTestNumber]);
         currentlyParseException = false;
     } catch (ParseException const& pe) {
         treeToDraw = 0;
@@ -150,36 +188,136 @@ void buildNextTree() {
     }
 }
 
+void resetTreeRect() {
+    treeRectX1 = INITIAL_TREE_RECT_X1;
+    treeRectY1 = INITIAL_TREE_RECT_Y1;
+    treeRectX2 = INITIAL_TREE_RECT_X2;
+    treeRectY2 = INITIAL_TREE_RECT_Y2;
+}
+
 void keyboardFunc(unsigned char key, int x, int y) {
-    if (testingFinished && (key == 'r' || key == 'R')) {
-        inputFile.close();
-        inputFile.open(INPUT_FILE_NAME);
-        testingFinished = false;
-        buildNextTree();
-    } else {
-        switch (key) {
-            case 27:
-            case 'q':
-            case 'Q':
-                haltProgram();
-            case 'f':
-            case 'F':
-                fullscreenMode = !fullscreenMode;
-                if (fullscreenMode) {
-                    glutFullScreen();
-                } else {
-                    glutReshapeWindow(DEFAULT_WINDOW_SIZE_X, DEFAULT_WINDOW_SIZE_Y);
-                    glutPositionWindow(DEFAULT_WINDOW_POS_X, DEFAULT_WINDOW_POS_Y);
-                }
-                break;
-            default:
-                if (testingFinished)
-                    haltProgram();
-                buildNextTree();
-                break;
-        }
+    switch (key) {
+        case 27:
+        case 'q':
+        case 'Q':
+            haltProgram();
+        case 'f':
+        case 'F':
+            fullscreenMode = !fullscreenMode;
+            if (fullscreenMode) {
+                glutFullScreen();
+            } else {
+                glutReshapeWindow(DEFAULT_WINDOW_SIZE_X, DEFAULT_WINDOW_SIZE_Y);
+                glutPositionWindow(DEFAULT_WINDOW_POS_X, DEFAULT_WINDOW_POS_Y);
+            }
+            glutPostRedisplay();
+            break;
+        case ' ':
+            resetTreeRect();
+            glutPostRedisplay();
+            break;
+        case 'x':
+            treeRectX1 *= 1.1;
+            treeRectX2 *= 1.1;
+            glutPostRedisplay();
+            break;
+        case 'X':
+            treeRectX1 /= 1.1;
+            treeRectX2 /= 1.1;
+            glutPostRedisplay();
+            break;
+        case 'y':
+            treeRectY1 *= 1.1;
+            treeRectY2 *= 1.1;
+            glutPostRedisplay();
+            break;
+        case 'Y':
+            treeRectY1 /= 1.1;
+            treeRectY2 /= 1.1;
+            glutPostRedisplay();
+            break;
+        case '+':
+            treeRectX1 *= 1.1;
+            treeRectX2 *= 1.1;
+            treeRectY1 *= 1.1;
+            treeRectY2 *= 1.1;
+            glutPostRedisplay();
+            break;
+        case '-':
+            treeRectX1 /= 1.1;
+            treeRectX2 /= 1.1;
+            treeRectY1 /= 1.1;
+            treeRectY2 /= 1.1;
+            glutPostRedisplay();
+            break;
+        case 'H':
+            if (showHelp) {
+                showHelp = false;
+                glutPostRedisplay();
+            }
+            break;
+        case 'h':
+            if (!showHelp) {
+                showHelp = true;
+                glutPostRedisplay();
+            }
+            break;
     }
-    glutPostRedisplay();
+}
+
+void specialFunc(int key, int x, int y) {
+    double dx = 30.0 / glutGet(GLUT_WINDOW_WIDTH);
+    double dy = 30.0 / glutGet(GLUT_WINDOW_HEIGHT);
+    switch (key) {
+        case GLUT_KEY_PAGE_UP:
+        case GLUT_KEY_F1:
+            if (currentTestNumber > 0) {
+                --currentTestNumber;
+                rebuildTree();
+                resetTreeRect();
+                currentTestNotePosDeltaX = 0;
+                glutPostRedisplay();
+            }
+            break;
+        case GLUT_KEY_PAGE_DOWN:
+        case GLUT_KEY_F2:
+            if (currentTestNumber < tests.size() - 1) {
+                ++currentTestNumber;
+                rebuildTree();
+                resetTreeRect();
+                currentTestNotePosDeltaX = 0;
+                glutPostRedisplay();
+            }
+            break;
+        case GLUT_KEY_LEFT:
+            treeRectX1 -= dx;
+            treeRectX2 -= dx;
+            glutPostRedisplay();
+            break;
+        case GLUT_KEY_RIGHT:
+            treeRectX1 += dx;
+            treeRectX2 += dx;
+            glutPostRedisplay();
+            break;
+        case GLUT_KEY_UP:
+            treeRectY1 += dy;
+            treeRectY2 += dy;
+            glutPostRedisplay();
+            break;
+        case GLUT_KEY_DOWN:
+            treeRectY1 -= dy;
+            treeRectY2 -= dy;
+            glutPostRedisplay();
+            break;
+        case GLUT_KEY_F3:
+            currentTestNotePosDeltaX -= 2 * dx;
+            glutPostRedisplay();
+            break;
+        case GLUT_KEY_F4:
+            currentTestNotePosDeltaX += 2 * dx;
+            glutPostRedisplay();
+            break;
+    }
 }
 
 int main(int argc, char **argv) {
@@ -191,10 +329,13 @@ int main(int argc, char **argv) {
     
     glutDisplayFunc(displayFunc);
     glutKeyboardFunc(keyboardFunc);
+    glutSpecialFunc(specialFunc);
     
     glClearColor(0, 0, 0, 0);
 
-    buildNextTree();
+    readTests();
+    currentTestNumber = 0;
+    rebuildTree();
 
     glutMainLoop();
 
